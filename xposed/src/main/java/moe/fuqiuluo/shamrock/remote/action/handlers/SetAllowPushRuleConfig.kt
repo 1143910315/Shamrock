@@ -1,9 +1,11 @@
 package moe.fuqiuluo.shamrock.remote.action.handlers
 
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import moe.fuqiuluo.shamrock.remote.action.ActionSession
 import moe.fuqiuluo.shamrock.remote.action.IActionHandler
 import moe.fuqiuluo.shamrock.remote.service.api.WebSocketClientServlet
+import moe.fuqiuluo.shamrock.tools.EmptyJsonString
 import moe.fuqiuluo.shamrock.tools.asJsonObjectOrNull
 import moe.fuqiuluo.shamrock.tools.asStringOrNull
 
@@ -18,7 +20,7 @@ internal object SetAllowPushRuleConfig : IActionHandler() {
 
     operator fun invoke(
         allow: JsonArray,
-        echo: String = "",
+        echo: JsonElement = EmptyJsonString,
         webSocket: WebSocketClientServlet?
     ): String {
         webSocket?.also { ws ->
