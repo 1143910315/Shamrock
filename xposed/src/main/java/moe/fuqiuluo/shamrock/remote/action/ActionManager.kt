@@ -42,7 +42,7 @@ internal object ActionManager {
             GetWeatherCityCode, GetWeather,
 
             // OTHER
-            GetDeviceBattery, SetAllowPushRuleConfig
+            GetDeviceBattery, DownloadFile, SetAllowPushRuleConfig
         ).forEach {
             it.alias.forEach { name ->
                 actionMap[name] = it
@@ -76,44 +76,44 @@ internal abstract class IActionHandler {
 
     protected fun ok(
         msg: String = "",
-        echo: String
+        echo: JsonElement
     ): String {
         return resultToString(true, Status.Ok, EmptyObject, msg, echo = echo)
     }
 
-    protected inline fun <reified T> ok(data: T, echo: String, msg: String = ""): String {
+    protected inline fun <reified T> ok(data: T, echo: JsonElement = EmptyJsonString, msg: String = ""): String {
         return resultToString(true, Status.Ok, data!!, msg, echo = echo)
     }
 
-    protected fun noParam(paramName: String, echo: String): String {
+    protected fun noParam(paramName: String, echo: JsonElement): String {
         return failed(Status.BadParam, "lack of [$paramName]", echo)
     }
 
-    protected fun badParam(why: String, echo: String): String {
+    protected fun badParam(why: String, echo: JsonElement): String {
         return failed(Status.BadParam, why, echo)
     }
 
-    protected fun error(why: String, echo: String): String {
+    protected fun error(why: String, echo: JsonElement): String {
         return failed(Status.InternalHandlerError, why, echo)
     }
 
-    protected fun logic(why: String, echo: String): String {
+    protected fun logic(why: String, echo: JsonElement): String {
         return failed(Status.LogicError, why, echo)
     }
 
-    protected fun failed(status: Status, msg: String, echo: String): String {
+    protected fun failed(status: Status, msg: String, echo: JsonElement): String {
         return resultToString(false, status, EmptyObject, msg, echo = echo)
     }
 }
 
 internal class ActionSession {
     private val params: JsonObject
-    internal val echo: String
+    internal val echo: JsonElement
     internal val webSocket: WebSocketClientServlet?
 
     constructor(
         values: Map<String, Any?>,
-        echo: String = "",
+        echo: JsonElement = EmptyJsonString,
         webSocket: WebSocketClientServlet? = null
     ) {
         val map = hashMapOf<String, JsonElement>()
@@ -137,7 +137,7 @@ internal class ActionSession {
 
     constructor(
         params: JsonObject,
-        echo: String = "",
+        echo: JsonElement,
         webSocket: WebSocketClientServlet? = null
     ) {
         this.echo = echo
