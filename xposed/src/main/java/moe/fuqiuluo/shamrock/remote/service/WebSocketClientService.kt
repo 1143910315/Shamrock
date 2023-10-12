@@ -32,19 +32,19 @@ internal class WebSocketClientService(
             }
             val runtime = MobileQQ.getMobileQQ().waitAppRuntime()
             val curUin = runtime.currentAccountUin
-            send(GlobalJson.encodeToString(
+            pushTo(
                 PushMetaEvent(
-                time = System.currentTimeMillis() / 1000,
-                selfId = app.longAccountUin,
-                postType = PostType.Meta,
-                type = MetaEventType.Heartbeat,
-                subType = MetaSubType.Connect,
-                status = BotStatus(
-                    Self("qq", curUin.toLong()), runtime.isLogin, status = "正常", good = true
-                ),
-                interval = 15000
+                    time = System.currentTimeMillis() / 1000,
+                    selfId = app.longAccountUin,
+                    postType = PostType.Meta,
+                    type = MetaEventType.Heartbeat,
+                    subType = MetaSubType.Connect,
+                    status = BotStatus(
+                        Self("qq", curUin.toLong()), runtime.isLogin, status = "正常", good = true
+                    ),
+                    interval = 15000
+                )
             )
-            ))
         }
     }
 

@@ -8,6 +8,7 @@ import moe.fuqiuluo.shamrock.remote.action.handlers.*
 import moe.fuqiuluo.shamrock.remote.entries.EmptyObject
 import moe.fuqiuluo.shamrock.remote.entries.Status
 import moe.fuqiuluo.shamrock.remote.entries.resultToString
+import moe.fuqiuluo.shamrock.remote.service.api.WebSocketClientServlet
 import moe.fuqiuluo.shamrock.tools.*
 import moe.fuqiuluo.shamrock.tools.json
 
@@ -41,7 +42,7 @@ internal object ActionManager {
             GetWeatherCityCode, GetWeather,
 
             // OTHER
-            GetDeviceBattery
+            GetDeviceBattery, SetAllowPushRuleConfig
         ).forEach {
             it.alias.forEach { name ->
                 actionMap[name] = it
@@ -108,10 +109,12 @@ internal abstract class IActionHandler {
 internal class ActionSession {
     private val params: JsonObject
     internal val echo: String
+    internal val webSocket: WebSocketClientServlet?
 
     constructor(
         values: Map<String, Any?>,
-        echo: String = ""
+        echo: String = "",
+        webSocket: WebSocketClientServlet? = null
     ) {
         val map = hashMapOf<String, JsonElement>()
         values.forEach { (key, value) ->
@@ -129,14 +132,17 @@ internal class ActionSession {
         }
         this.echo = echo
         this.params = JsonObject(map)
+        this.webSocket = webSocket
     }
 
     constructor(
         params: JsonObject,
-        echo: String = ""
+        echo: String = "",
+        webSocket: WebSocketClientServlet? = null
     ) {
         this.echo = echo
         this.params = params
+        this.webSocket = webSocket
     }
 
     fun getLong(key: String): Long {

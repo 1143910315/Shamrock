@@ -6,6 +6,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToJsonElement
 import moe.fuqiuluo.shamrock.remote.action.ActionManager
 import moe.fuqiuluo.shamrock.remote.action.ActionSession
 import moe.fuqiuluo.shamrock.remote.entries.EmptyObject
@@ -24,6 +25,12 @@ internal abstract class WebSocketClientServlet(
     url: String,
     wsHeaders: Map<String, String>
 ) : BasePushServlet, WebSocketClient(URI(url), wsHeaders) {
+
+    data class AllowPushRule(val stringValue: String, val regexValue: Regex)
+
+    private var defaultPush = true
+    private val pushRuleList = mutableListOf<AllowPushRule>()
+
     override val address: String
         get() = ShamrockConfig.getWebSocketClientAddress()
 
@@ -55,7 +62,7 @@ internal abstract class WebSocketClientServlet(
             val params = actionObject["params"].asJsonObject
 
             val handler = ActionManager[action]
-            handler?.handle(ActionSession(params, echo))
+            handler?.handle(ActionSession(params, echo, this))
                 ?: resultToString(false, Status.UnsupportedAction, EmptyObject, "不支持的Action", echo = echo)
         }.getOrNull()
         respond?.let { send(it) }
@@ -74,9 +81,36 @@ internal abstract class WebSocketClientServlet(
     protected inline fun <reified T> pushTo(body: T) {
         if(!allowPush() || isClosed || isClosing) return
         try {
-            send(GlobalJson.encodeToString(body))
+            val sendString = GlobalJson.encodeToString(body)
+            val sendJson = GlobalJson.encodeToJsonElement(body)
+            val sendJsonObject = sendJson.asJsonObject
+            var push = defaultPush
+            run breaking@{
+                pushRuleList.forEach {
+                    if (sendJsonObject.containsKey(it.stringValue)) {
+                        val matchResult =
+                            it.regexValue.find(sendJsonObject[it.stringValue].toString())
+                        if (matchResult != null) {
+                            push = !push
+                            return@breaking
+                        }
+                    }
+                }
+            }
+            if (push) {
+                send(sendString)
+            }
         } catch (e: Throwable) {
             LogCenter.log("被动WS推送失败: ${e.stackTraceToString()}", Level.ERROR)
         }
+    }
+
+    fun clearPushRule(defaultPush: Boolean = true) {
+        pushRuleList.clear()
+        this.defaultPush = defaultPush
+    }
+
+    fun addPushRule(key: String, regex: String) {
+        pushRuleList.add(AllowPushRule(key, Regex(regex)))
     }
 }
